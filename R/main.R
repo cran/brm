@@ -73,13 +73,13 @@
 #' 
 #' \item{converged}{  Did the maximization process converge? }
 #' 
-#' @author Linbo Wang <linbowang@g.harvard.edu>, Thomas Richardson <thomasr@uw.edu>
+#' @author Linbo Wang <linbo.wang@utoronto.ca>, Mark Clements <mark.clements@ki.se>, Thomas Richardson <thomasr@uw.edu>
 #' 
-#' @references Thomas S. Richardson, James M. Robins and Linbo Wang. "On Modeling and Estimation for the Relative Risk and Risk Difference." Journal of the American Statistical Association: Theory and Methods (2016+).
+#' @references Thomas S. Richardson, James M. Robins and Linbo Wang. "On Modeling and Estimation for the Relative Risk and Risk Difference." Journal of the American Statistical Association: Theory and Methods (2017).
 #' 
 #' Eric J. Tchetgen Tchetgen, James M. Robins and Andrea Rotnitzky. "On doubly robust estimation in a semiparametric odds ratio model." Biometrika 97.1 (2010): 171-180.
 #' 
-#' @seealso \code{getProbScalarRD} and \code{getProbScalarRR} for functions calculating risks P(y=1|x=1) and P(y=1|x=0) from (atanh RD, log OP) or (log RR, log OP);
+#' @seealso \code{getProbScalarRD}, \code{getProbRD} (vectorised), \code{getProbScalarRR} and \code{getProbRR} (vectorised) for functions calculating risks P(y=1|x=1) and P(y=1|x=0) from (atanh RD, log OP) or (log RR, log OP);
 #' 
 #' \code{predict.blm} for obtaining fitted probabilities from \code{brm} fits.
 #' 
@@ -95,11 +95,11 @@
 #' v.2         = runif(n,-2,2) 
 #' v           = cbind(v.1,v.2)
 #' pscore.true = exp(v %*% gamma.true) / (1+exp(v %*% gamma.true))
-#' p0p1.true   = t(mapply(getProbScalarRR,v %*% alpha.true,v %*% beta.true)) 
-#' x           = mapply(rbinom,rep(1,n),rep(1,n),pscore.true)  
+#' p0p1.true   = getProbRR(v %*% alpha.true,v %*% beta.true)
+#' x           = rbinom(n, 1, pscore.true)  
 #' pA.true       = p0p1.true[,1]
 #' pA.true[x==1] = p0p1.true[x==1,2]
-#' y = mapply(rbinom,rep(1,n),rep(1,n),pA.true)
+#' y = rbinom(n, 1, pA.true)
 #' 
 #' fit.mle = brm(y,x,v,v,'RR','MLE',v,TRUE)
 #' fit.drw = brm(y,x,v,v,'RR','DR',v,TRUE)
@@ -111,11 +111,11 @@
 
 
 brm = function(y, x, va, vb = NULL, param, est.method = "MLE", vc = NULL, 
-    optimal = TRUE, weights = NULL, subset = NULL, max.step = 1000, thres = 1e-6, 
+    optimal = TRUE, weights = NULL, subset = NULL, max.step = NULL, thres = 1e-8, 
     alpha.start = NULL, beta.start = NULL, message = FALSE) {
     
     # default param = 'RR'; est.method = 'MLE'; va = v; vb = v; vc = v;
-    # weights = NULL; subset = NULL; optimal = TRUE; max.step = 1000; 
+    # weights = NULL; subset = NULL; optimal = TRUE; max.step = NULL; 
     # thres = 1e-06; alpha.start = NULL; beta.start = NULL
     
     if (is.null(vb)) 
@@ -123,9 +123,13 @@ brm = function(y, x, va, vb = NULL, param, est.method = "MLE", vc = NULL,
     if (is.null(vc)) 
         vc = va
     
-    if(class(va) == "formula") va = stats::model.matrix(va)
-    if(class(vb) == "formula") vb = stats::model.matrix(vb)
-    if(class(vc) == "formula") vc = stats::model.matrix(vc)
+    if(class(va)[1] == "formula") va = stats::model.matrix(va)
+    if(class(vb)[1] == "formula") vb = stats::model.matrix(vb)
+    if(class(vc)[1] == "formula") vc = stats::model.matrix(vc)
+    
+    if(is.vector(va)) va = as.matrix(va, ncol = 1)
+    if(is.vector(vb)) vb = as.matrix(vb, ncol = 1)
+    if(is.vector(vc)) vc = as.matrix(vc, ncol = 1)
     
     if (is.null(weights)) 
         weights = rep(1, length(y))
@@ -137,11 +141,12 @@ brm = function(y, x, va, vb = NULL, param, est.method = "MLE", vc = NULL,
     
     data = cbind(y,x,va,vb,vc,weights)[subset,]
     subset = subset[rowSums(is.na(data)) == 0]
-    y = y[subset];  x = x[subset];  va = va[subset,];    vb = vb[subset,]
-    vc = vc[subset,];   weights = weights[subset]
+    y = y[subset];  x = x[subset];  va = va[subset,,drop=FALSE];    vb = vb[subset,,drop=FALSE]
+    vc = vc[subset,,drop=FALSE];   weights = weights[subset]
     
     pa = dim(va)[2]
     pb = dim(vb)[2]
+    if (is.null(max.step)) max.step = min(pa * 20, 1000)
     
     if (est.method == "MLE"){
         sol = MLEst(param, y, x, va, vb, weights, max.step, thres, alpha.start, 

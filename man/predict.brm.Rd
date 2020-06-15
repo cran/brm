@@ -4,8 +4,7 @@
 \alias{predict.brm}
 \title{Fitted probabilities from \code{brm} fits}
 \usage{
-\method{predict}{brm}(object, x.new = NULL, va.new = NULL, vb.new = NULL,
-  ...)
+\method{predict}{brm}(object, x.new = NULL, va.new = NULL, vb.new = NULL, ...)
 }
 \arguments{
 \item{object}{A fitted object from function \code{brm}.}
@@ -26,4 +25,3 @@ If x.new is supplied, a vector consisting of fitted probabilities px = P(y=1|x=x
 \description{
 Calculate fitted probabilities from a fitted binary regression model object.
 }
-

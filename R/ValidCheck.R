@@ -24,7 +24,7 @@ ValidCheck = function(param, y, x, va, vb, vc, weights, subset, est.method,
         stop("Must use MLE or DR for estimation")
     if (!is.logical(optimal)) 
         stop("optimal must be a logical variable")
-    if(!is.numeric(max.step))
+    if(!is.numeric(max.step) & !is.null(max.step))
         stop("max.step must be a number")
     if(!is.numeric(thres))
         stop("thres must be a number")

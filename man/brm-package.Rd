@@ -15,9 +15,8 @@ Unlike \code{glm}, which uses a single link function for the outcome, \code{brm}
    
    \code{brm} also provides doubly robust fitting as an option such that the estimates for \eqn{\alpha} are still consistent and asymptotically normal even when the nuisance model is misspecified, provided that we have a correctly specified logistic model for the exposure probability \eqn{P(x=1|v)}. Such doubly robust estimation is only possible for the Relative Risk and Risk Difference, but not the Odds Ratio.
    
-  See Richardson et al. (2016+) for more details.
+  See Richardson et al. (2017) for more details.
 }
 \references{
-Thomas S. Richardson, James M. Robins and Linbo Wang. "On Modeling and Estimation for the Relative Risk and Risk Difference." Journal of the American Statistical Association: Theory and Methods (2016+).
+Thomas S. Richardson, James M. Robins and Linbo Wang. "On Modeling and Estimation for the Relative Risk and Risk Difference." Journal of the American Statistical Association: Theory and Methods (2017).
 }
-
